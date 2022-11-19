@@ -1,0 +1,8 @@
+{
+	"user": "collector",
+	"access": {
+			"dsl": {
+					"methods" : [ "metrics" ]
+			}
+	}
+}

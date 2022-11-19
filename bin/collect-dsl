@@ -1,0 +1,104 @@
+#!/bin/sh
+# Copyright 2022 Thomas Aldrian
+# Released under the Apache License, Version 2.0
+# https://github.com/Weissnix4711/dsl-stats
+
+HOST=$COLLECTD_HOSTNAME
+INTERVAL=$COLLECTD_INTERVAL
+INSTANCE="dsl0"
+
+[ -z "$INTERVAL" ] && INTERVAL=60
+INTERVAL=$(awk -v i=$INTERVAL 'BEGIN{print int(i)}')
+
+# Items to match
+# using jsonfilter
+items="@.uptime \
+  @.upstream.attndr \
+  @.upstream.data_rate \
+  @.upstream.latn \
+  @.upstream.satn \
+  @.upstream.snr \
+  @.downstream.attndr \
+  @.downstream.data_rate \
+  @.downstream.latn \
+  @.downstream.satn \
+  @.downstream.snr \
+  @.errors.near.es \
+  @.errors.near.ses \
+  @.errors.near.loss \
+  @.errors.near.uas \
+  @.errors.near.crc_p \
+  @.errors.near.crcp_p \
+  @.errors.far.es \
+  @.errors.far.ses \
+  @.errors.far.loss \
+  @.errors.far.uas \
+  @.errors.far.crc_p \
+  @.errors.far.crcp_p"
+
+while sleep $INTERVAL; do
+  json="$(/bin/ubus call dsl metrics)"
+
+  for item in $items; do
+    type=""
+    typeinstance=""
+
+    if [[ "$item" == *"upstream"* ]]; then
+      typeinstance="up"
+    elif [[ "$item" == *"downstream"* ]]; then
+      typeinstance="down"
+    fi
+
+    if [[ "$item" == *"far"* ]]; then
+      typeinstance="f_"
+    fi
+
+    case "$item" in
+      *uptime)
+        type="uptime" ;;
+      *data_rate)
+        type="bitrate" ;;
+      *attndr)
+        type="bitrate"
+        typeinstance="${typeinstance}adr"
+        ;;
+      *.latn)
+        type="atn"
+        typeinstance="${typeinstance}latn"
+        ;;
+      *.satn)
+        type="atn"
+        typeinstance="${typeinstance}satn"
+        ;;
+      *.snr)
+        type="snr" ;;
+      *.es)
+        type="errors"
+        typeinstance="${typeinstance}es"
+        ;;
+      *.ses)
+        type="errors"
+        typeinstance="${typeinstance}ses"
+        ;;
+      *loss)
+        type="errors"
+        typeinstance="${typeinstance}loss"
+        ;;
+      *uas)
+        type="errors"
+        typeinstance="${typeinstance}uas"
+        ;;
+      *crc_p)
+        type="crc"
+        typeinstance="${typeinstance}crc"
+        ;;
+      *crcp_p)
+        type="crc"
+        typeinstance="${typeinstance}crcp"
+    esac
+
+    value="$(echo "$json" | jsonfilter -e "$item" | tr -cd ".[0-9]")"
+
+    [ ! -z "$item" ] && echo "PUTVAL \"$HOST/dsl-$INSTANCE/$type$(if [[ ! -z $typeinstance ]]; then echo "-$typeinstance"; fi)\" interval=$INTERVAL N:$value"
+  done
+done
