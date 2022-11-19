@@ -5,8 +5,8 @@ Collect and graph DSL statistics using collectd and luci-statistics. Also provid
 ## Setup
 
 - Create a new user `collector`.
-  - Not actually necessary, can use `nobody` user as well, but edit [collectd-dsl.json](acl.d/collectd-dsl.json) accordinly.
-- Copy [acl.d/collectd-dsl.json](acl.d/collectd-dsl.json) to `/usr/share/acl.d/`.
+  - Not actually necessary, can use `nobody` user as well, but edit [collector.json](acl.d/collector.json) accordinly.
+- Copy [acl.d/collector.json](acl.d/collector.json) to `/usr/share/acl.d/`.
 - Copy [bin/collect-dsl](bin/collect-dsl) to `/usr/bin/collect-dsl` and make it executable with `chmod +x /usr/bin/collect-dsl`.
 - (Optional, for luci-statistics only) Copy [definitions/dsl.js](definitions/dsl.js) to `/www/luci-static/resources/statistics/rrdtool/definitions`.
 - (Optional setup for MQTT) Add the contents of [collectd.conf](collectd.conf) to the end of `/etc/collectd.conf`. Note this will not survive restarts. I'm working on a better solution, but currently the MQTT plugin cannot be set up via uci / luci.
