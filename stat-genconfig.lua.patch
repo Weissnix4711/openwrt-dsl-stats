@@ -1,0 +1,52 @@
+--- /usr/bin/stat-genconfig	2023-04-03 12:08:51.000000000 +0000
++++ /etc/config/stat-genconfig.new	2023-04-15 15:55:22.000000000 +0000
+@@ -190,6 +190,40 @@
+ 		_bool(c["ReportStats"], "ReportStats")
+ end
+
++function config_mqtt( c )
++	local str = ""
++
++	for s in pairs(sections) do
++		for key, type in pairs({ Publish="collectd_mqtt_publish", Subscribe="collectd_mqtt_subscribe" }) do
++			if sections[s][".type"] == type then
++				host = sections[s].host
++				port = sections[s].port
++				user = sections[s].user
++				password = sections[s].password
++				clientid = sections[s].clientid
++				qos = sections[s].qos
++
++				str = str .. "\t<" .. key .. " \"" .. sections[s].name .. "\">\n" ..
++					"\t\tHost \"" .. host .. "\"\n" ..
++					(port and ("\t\tPort \"" .. port .. "\"\n") or "") ..
++					(user and ("\t\tUser \"" .. user .. "\"\n") or "") ..
++					(password and ("\t\tPassword \"" .. password .. "\"\n") or "") ..
++					(clientid and ("\t\tClientId \"" .. clientid .. "\"\n") or "") ..
++					(qos and ("\t\tQoS " .. qos .. "\n") or "")
++
++				if type == "collectd_mqtt_publish" then
++					str = str .. "\t" .. _string(sections[s].prefix, "Prefix") ..
++						"\t" .. _bool(sections[s].retain, "Retain")
++				end
++
++				str = str .. "\t</" .. key .. ">\n"
++			end
++		end
++	end
++
++	return str
++
++end
+
+ function _list_expand( c, l, nopad )
+ 	local str = ""
+@@ -292,6 +326,8 @@
+ 		plugins[name] = config_curl
+ 	elseif (name == "network") then
+ 		plugins[name] = config_network
++	elseif (name == "mqtt") then
++		plugins[name] = config_mqtt
+ 	else
+ 		local plugin_def = luci.jsonc.parse(nixio.fs.readfile(plugin_dir .. filename))
+ 		if type(plugin_def) == "table" then
